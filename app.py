@@ -28,7 +28,7 @@ if view_mode == "🎯 Funnel: Get Started":
         
         commitment = st.slider("How many hours a week can you realistically commit to the gym?", 1, 6, 3)
         
-        submitted = st.form_submit_form_button("Generate My Blueprint")
+        submitted = st.form_submit_button("Generate My Blueprint")
         
         if submitted:
             st.success(f"Thanks {name}! We've registered your profile.")
@@ -82,7 +82,7 @@ elif view_mode == "📊 Dashboard: Client Tracker":
             recovery = st.slider("Recovery & Sleep Quality (1-10)", 1, 10, 7)
             stress = st.slider("Life/Work Stress Levels (1-10)", 1, 10, 4)
             
-            submit_checkin = st.form_submit_form_button("Submit Weekly Check-In")
+            submit_checkin = st.form_submit_button("Submit Weekly Check-In")
             
             if submit_checkin:
                 # Basic "Traffic Light" algorithmic feedback
