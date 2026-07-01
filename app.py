@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
 import os
+import requests  # Standard library for sending background data
 
 # App Configuration
 st.set_page_config(page_title="PT2U Command Center", page_icon="💪", layout="wide")
 
-st.title("💪 PT2U: Client Hub & Funnel")
+st.title("💪 PT2U: Client Hub & Funnel")    
 st.write("Welcome to your lightweight personal training ecosystem.")
 
 # Sidebar Navigation
@@ -22,7 +23,7 @@ if view_mode == "🎯 Funnel: Get Started":
     
     with st.form("funnel_form"):
         name = st.text_input("What's your name?")
-        email = st.text_input("Your best email address?")
+        email = st.text_input("Your email address?")
         
         goal = st.selectbox(
             "What is your primary physical objective right now?",
@@ -55,6 +56,30 @@ if view_mode == "🎯 Funnel: Get Started":
                 
                 updated_df.to_csv(LOCAL_FILE, index=False)
                 st.caption("⚡ Lead successfully recorded in the cloud system database!")
+
+                # --- 2. SILENT BACKGROUND EMAIL AUTO-FORWARD ---
+                # Change this to your friend's actual trainer email address!
+                trainer_email = "khairool.adzelan@gmail.com" 
+                
+                formsubmit_url = f"https://formsubmit.co/ajax/{trainer_email}"
+                
+                payload = {
+                    "Subject": f"🚨 New PT2U Lead: {name}",
+                    "Prospect Name": name,
+                    "Prospect Email": email,
+                    "Objective Selected": goal,
+                    "Weekly Commitment": f"{commitment} Hours",
+                    "_captcha": "false" # Bypasses any human verification screens
+                }
+                
+                try:
+                    # Fires a silent data packet out to the email endpoint instantly
+                    response = requests.post(formsubmit_url, data=payload)
+                    if response.status_code == 200:
+                        st.caption("⚡ Lead safely captured and routed to Coach profile.")
+                except Exception as e:
+                    # Fails silently in the background so the user never sees an ugly crash
+                    pass
                 
                 # Dynamic Suggestion UI Logic
                 if "drop body fat" in goal:
