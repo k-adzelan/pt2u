@@ -1,14 +1,21 @@
 import streamlit as st
 import pandas as pd
+from streamlit_gsheets import GSheetsConnection
 
 # App Configuration
-st.set_page_config(page_title="VibePT Command Center", page_icon="💪", layout="wide")
+st.set_page_config(page_title="PT2U Command Center", page_icon="💪", layout="wide")
 
-st.title("💪 VibePT: Client Hub & Funnel")
+st.title("💪 PT2U: Client Hub & Funnel")
 st.write("Welcome to your lightweight personal training ecosystem.")
 
 # Sidebar Navigation
 view_mode = st.sidebar.radio("Navigate Platform", ["🎯 Funnel: Get Started", "📊 Dashboard: Client Tracker"])
+
+# Initialize Google Sheets Connection
+try:
+    conn = st.connection("gsheets", type=GSheetsConnection)
+except Exception as e:
+    conn = None
 
 # ==========================================
 # 1. MARKETING FUNNEL / LEAD GEN
@@ -31,19 +38,48 @@ if view_mode == "🎯 Funnel: Get Started":
         submitted = st.form_submit_button("Generate My Blueprint")
         
         if submitted:
-            st.success(f"Thanks {name}! We've registered your profile.")
-            
-            # Dynamic Suggestion Logic based on selection
-            if "drop body fat" in goal:
-                st.subheader("🟢 Your Recommended Track: Weight Loss Package")
-                st.write("**Total Package Price:** RM5,844 (3-Month Cycle)")
-                st.write("**Payment Plan:** RM2,922 upon sign-up, RM2,922 at Week 5.")
-                st.info("💡 Next Step: Your coach will reach out to schedule your Baseline Assessment and set up your nutrition tracker!")
+            if not name or not email:
+                st.error("Please provide both your name and email address to get your blueprint!")
             else:
-                st.subheader("🟠 Your Recommended Track: Muscle Building Package")
-                st.write("**Total Package Price:** RM7,800 (3-Month Cycle)")
-                st.write("**Payment Plan:** RM3,900 upon sign-up, RM3,900 at Week 5.")
-                st.info("💡 Next Step: Your coach will reach out to map your progressive overload targets and supplement regime!")
+                st.success(f"Thanks {name}! We've registered your profile.")
+                
+                # --- BACKEND DATABASE INTERACTION ---
+                if conn is not None:
+                    try:
+                        # Read existing data from 'leads' worksheet inside your pt2u_leads file
+                        existing_data = conn.read(worksheet="leads", ttl=5)
+                        
+                        # Create a row DataFrame for the new lead
+                        new_lead = pd.DataFrame([{
+                            "name": name,
+                            "email": email,
+                            "goal": goal,
+                            "commitment": int(commitment)
+                        }])
+                        
+                        # Combine old data with new row
+                        updated_data = pd.concat([existing_data, new_lead], ignore_index=True)
+                        
+                        # Write it back to Google Sheets
+                        conn.update(worksheet="leads", data=updated_data)
+                        st.caption("⚡ Lead securely synchronized to PT2U backend.")
+                    except Exception as db_err:
+                        st.warning("Could not sync to Google Sheets. Make sure Secrets and permissions are correct.")
+                        st.caption(f"Error details: {db_err}")
+                else:
+                    st.info("Database connection not established yet. Add your Secrets configuration.")
+                
+                # Dynamic Suggestion UI Logic
+                if "drop body fat" in goal:
+                    st.subheader("🟢 Your Recommended Track: Weight Loss Package")
+                    st.write("**Total Package Price:** RM5,844 (3-Month Cycle)")
+                    st.write("**Payment Plan:** RM2,922 upon sign-up, RM2,922 at Week 5.")
+                    st.info("💡 Next Step: Your coach will reach out to schedule your Baseline Assessment and set up your nutrition tracker!")
+                else:
+                    st.subheader("🟠 Your Recommended Track: Muscle Building Package")
+                    st.write("**Total Package Price:** RM7,800 (3-Month Cycle)")
+                    st.write("**Payment Plan:** RM3,900 upon sign-up, RM3,900 at Week 5.")
+                    st.info("💡 Next Step: Your coach will reach out to map your progressive overload targets and supplement regime!")
 
 # ==========================================
 # 2. CLIENT PROGRESS TRACKER
@@ -53,7 +89,6 @@ elif view_mode == "📊 Dashboard: Client Tracker":
     
     # Mock Database Selector for Client Login
     client_profile = st.selectbox("Select Profile (Simulated Login)", ["Ahmad (Weight Loss)", "Siti (Muscle Building)"])
-    
     st.divider()
     
     # Profile Tabs
@@ -85,7 +120,6 @@ elif view_mode == "📊 Dashboard: Client Tracker":
             submit_checkin = st.form_submit_button("Submit Weekly Check-In")
             
             if submit_checkin:
-                # Basic "Traffic Light" algorithmic feedback
                 vibe_score = (energy + recovery - stress)
                 st.success("Log received by your trainer!")
                 
@@ -99,7 +133,6 @@ elif view_mode == "📊 Dashboard: Client Tracker":
 
     with tab3:
         st.subheader("Your Consistency Timeline")
-        # Visualizing progress over time
         chart_data = pd.DataFrame({
             'Week': ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
             'Compliance Rate (%)': [85, 90, 95, 100]
