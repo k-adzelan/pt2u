@@ -56,17 +56,15 @@ if view_mode == "🎯 Funnel: Get Started":
                 updated_df.to_csv(LOCAL_FILE, index=False)
                 st.caption("⚡ Lead successfully recorded in the cloud system database!")
                 
-                # Dynamic Suggestion UI Logic based on previous business calculations
+                # Dynamic Suggestion UI Logic
                 if "drop body fat" in goal:
                     st.subheader("🟢 Your Recommended Track: Weight Loss Package")
                     st.write("**Total Package Price:** RM5,844 (3-Month Cycle)")
                     st.write("**Payment Plan:** RM2,922 upon sign-up, RM2,922 at Week 5.")
-                    st.info("💡 Next Step: Your coach will reach out to schedule your Baseline Assessment and set up your nutrition tracker!")
                 else:
                     st.subheader("🟠 Your Recommended Track: Muscle Building Package")
                     st.write("**Total Package Price:** RM7,800 (3-Month Cycle)")
                     st.write("**Payment Plan:** RM3,900 upon sign-up, RM3,900 at Week 5.")
-                    st.info("💡 Next Step: Your coach will reach out to map your progressive overload targets and supplement regime!")
 
 # ==========================================
 # 2. CLIENT PROGRESS TRACKER
@@ -74,30 +72,22 @@ if view_mode == "🎯 Funnel: Get Started":
 elif view_mode == "📊 Dashboard: Client Tracker":
     st.header("🔒 Client Portal: Continual Monitoring")
     
-    # Mock Database Selector for Client Login
     client_profile = st.selectbox("Select Profile (Simulated Login)", ["Ahmad (Weight Loss)", "Siti (Muscle Building)"])
     st.divider()
     
-    # Profile Tabs
     tab1, tab2, tab3 = st.tabs(["📋 Baseline & Goals", "📈 Weekly Vibe Check", "🎯 Progress History"])
     
     with tab1:
         st.subheader("Your Starting Metrics & North Star")
         if "Ahmad" in client_profile:
             st.markdown("**Track:** 🟢 Weight Loss")
-            st.markdown("**The 'Why':** To feel energetic playing with my kids.")
             st.markdown("**Starting Weight:** 92 kg | **Waist:** 104 cm")
-            st.markdown("**Constraints:** 3 hours/week max commitment")
         else:
             st.markdown("**Track:** 🟠 Muscle Building")
-            st.markdown("**The 'Why':** To look confident and strong for my wedding.")
             st.markdown("**Starting Weight:** 68 kg | **Max Pushups:** 15 reps")
-            st.markdown("**Constraints:** 4 hours/week commitment")
 
     with tab2:
         st.subheader("Weekly Check-In Form")
-        st.write("Keep your coach updated on your physical and psychological stress load.")
-        
         with st.form("vibe_check_form"):
             current_metric = st.number_input("Log Current Weight (kg) or Weekly Workout Volume:", value=70.0)
             energy = st.slider("Energy Levels (1-10)", 1, 10, 7)
@@ -109,14 +99,6 @@ elif view_mode == "📊 Dashboard: Client Tracker":
             if submit_checkin:
                 vibe_score = (energy + recovery - stress)
                 st.success("Log received by your trainer!")
-                
-                if vibe_score >= 10:
-                    st.balloons()
-                    st.success("🟢 Traffic Light Status: GREEN. You are crushing it! Keep following the baseline script.")
-                elif 5 <= vibe_score < 10:
-                    st.warning("🟡 Traffic Light Status: YELLOW. Nice consistency. Focus on getting an extra 1L of water and 30 mins of sleep tonight.")
-                else:
-                    st.error("🔴 Traffic Light Status: RED. High fatigue/stress detected. Your coach has been notified to modify your upcoming sessions.")
 
     with tab3:
         st.subheader("Your Consistency Timeline")
@@ -127,7 +109,7 @@ elif view_mode == "📊 Dashboard: Client Tracker":
         st.line_chart(chart_data.set_index('Week'))
 
 # ==========================================
-# 3. ADMIN VIEW (REPLACES GOOGLE SHEETS)
+# 3. ADMIN VIEW
 # ==========================================
 elif view_mode == "🔑 Admin: View Leads":
     st.header("🔑 PT2U Lead Management Hub")
@@ -137,7 +119,6 @@ elif view_mode == "🔑 Admin: View Leads":
         leads_df = pd.read_csv(LOCAL_FILE)
         st.dataframe(leads_df, use_container_width=True)
         
-        # Download button so your friend can save it as an Excel-friendly CSV file anytime
         csv_data = leads_df.to_csv(index=False).encode('utf-8')
         st.download_button(
             label="📥 Download Leads as Excel/CSV",
