@@ -59,7 +59,7 @@ if view_mode == "🎯 Funnel: Get Started":
 
                 # --- 2. SILENT BACKGROUND EMAIL AUTO-FORWARD ---
                 # Change this to your friend's actual trainer email address!
-                trainer_email = "khairool.adzelan@gmail.com" 
+                trainer_email = "https://formsubmit.co/el/khairool.adzelan@gmail.com" 
                 
                 formsubmit_url = f"https://formsubmit.co/ajax/{trainer_email}"
                 
