@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from streamlit_gsheets import GSheetsConnection
+import os
 
 # App Configuration
 st.set_page_config(page_title="PT2U Command Center", page_icon="💪", layout="wide")
@@ -9,13 +9,9 @@ st.title("💪 PT2U: Client Hub & Funnel")
 st.write("Welcome to your lightweight personal training ecosystem.")
 
 # Sidebar Navigation
-view_mode = st.sidebar.radio("Navigate Platform", ["🎯 Funnel: Get Started", "📊 Dashboard: Client Tracker"])
+view_mode = st.sidebar.radio("Navigate Platform", ["🎯 Funnel: Get Started", "📊 Dashboard: Client Tracker", "🔑 Admin: View Leads"])
 
-# Initialize Google Sheets Connection
-try:
-    conn = st.connection("gsheets", type=GSheetsConnection)
-except Exception as e:
-    conn = None
+LOCAL_FILE = "captured_leads.csv"
 
 # ==========================================
 # 1. MARKETING FUNNEL / LEAD GEN
@@ -43,33 +39,24 @@ if view_mode == "🎯 Funnel: Get Started":
             else:
                 st.success(f"Thanks {name}! We've registered your profile.")
                 
-                # --- BACKEND DATABASE INTERACTION ---
-                if conn is not None:
-                    try:
-                        # Read existing data from 'leads' worksheet inside your pt2u_leads file
-                        existing_data = conn.read(worksheet="leads", ttl=5)
-                        
-                        # Create a row DataFrame for the new lead
-                        new_lead = pd.DataFrame([{
-                            "name": name,
-                            "email": email,
-                            "goal": goal,
-                            "commitment": int(commitment)
-                        }])
-                        
-                        # Combine old data with new row
-                        updated_data = pd.concat([existing_data, new_lead], ignore_index=True)
-                        
-                        # Write it back to Google Sheets
-                        conn.update(worksheet="leads", data=updated_data)
-                        st.caption("⚡ Lead securely synchronized to PT2U backend.")
-                    except Exception as db_err:
-                        st.warning("Could not sync to Google Sheets. Make sure Secrets and permissions are correct.")
-                        st.caption(f"Error details: {db_err}")
-                else:
-                    st.info("Database connection not established yet. Add your Secrets configuration.")
+                # --- SAFE LOCAL STORAGE BACKEND ---
+                new_lead = pd.DataFrame([{
+                    "Name": name,
+                    "Email": email,
+                    "Goal": goal,
+                    "Commitment (Hours)": int(commitment)
+                }])
                 
-                # Dynamic Suggestion UI Logic
+                if os.path.exists(LOCAL_FILE):
+                    existing_df = pd.read_csv(LOCAL_FILE)
+                    updated_df = pd.concat([existing_df, new_lead], ignore_index=True)
+                else:
+                    updated_df = new_lead
+                
+                updated_df.to_csv(LOCAL_FILE, index=False)
+                st.caption("⚡ Lead successfully recorded in the cloud system database!")
+                
+                # Dynamic Suggestion UI Logic based on previous business calculations
                 if "drop body fat" in goal:
                     st.subheader("🟢 Your Recommended Track: Weight Loss Package")
                     st.write("**Total Package Price:** RM5,844 (3-Month Cycle)")
@@ -138,3 +125,25 @@ elif view_mode == "📊 Dashboard: Client Tracker":
             'Compliance Rate (%)': [85, 90, 95, 100]
         })
         st.line_chart(chart_data.set_index('Week'))
+
+# ==========================================
+# 3. ADMIN VIEW (REPLACES GOOGLE SHEETS)
+# ==========================================
+elif view_mode == "🔑 Admin: View Leads":
+    st.header("🔑 PT2U Lead Management Hub")
+    st.write("This tab displays incoming traffic from your marketing funnel in real-time.")
+    
+    if os.path.exists(LOCAL_FILE):
+        leads_df = pd.read_csv(LOCAL_FILE)
+        st.dataframe(leads_df, use_container_width=True)
+        
+        # Download button so your friend can save it as an Excel-friendly CSV file anytime
+        csv_data = leads_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Download Leads as Excel/CSV",
+            data=csv_data,
+            file_name="pt2u_marketing_leads.csv",
+            mime="text/csv",
+        )
+    else:
+        st.info("No leads captured yet! Go fill out the form in the Funnel tab to see it populate here.")
